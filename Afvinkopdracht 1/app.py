@@ -60,7 +60,7 @@ def search_word_pos(line, ftr):
     :param ftr: de opgegeven filter
     :return: de gesplitte regel in een lijst
     """
-    line_split = line.split(ftr)
+    line_split = line.split(ftr, 1)
     line_split.insert(1, ftr)
     return line_split
 

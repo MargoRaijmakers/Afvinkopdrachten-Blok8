@@ -9,7 +9,9 @@
     <form method="post">
         <p>
             Geef een zoekwoord op:
-            <input type="text" name="filter"> <input type="submit">
+            <label>
+                <input type="text" name="filter">
+            </label> <input type="submit">
         </p>
         <hr>
             {% for line in data %}
@@ -20,8 +22,6 @@
                 {{ line[2] }} <br>
 
             {% endfor %}
-        </p>
-
     </form>
 </body>
 </html>

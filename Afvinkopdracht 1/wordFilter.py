@@ -16,10 +16,10 @@ def get_filter():
         ftr = request.form.get("filter", "")
         conn = connector()
         ftr_data = use_filter(conn, ftr)
-        return render_template("Webapp.html", filter=ftr,
+        return render_template("WebAppWordFilter.html", filter=ftr,
                                data=ftr_data)
     else:
-        return render_template("Webapp.html", filter="",
+        return render_template("WebAppWordFilter.html", filter="",
                                data="")
 
 

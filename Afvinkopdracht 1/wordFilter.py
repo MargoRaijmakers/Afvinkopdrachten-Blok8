@@ -1,3 +1,7 @@
+# Margo Raijmakers
+# 12-04-2021
+# Afvinkopdracht 1: Basis Flask
+
 from flask import Flask, render_template, request
 import mysql.connector
 import re

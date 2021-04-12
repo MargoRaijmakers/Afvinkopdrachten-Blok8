@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Webapp</title>
+    <meta name="Margo Raijmakers" content="Webapp HTML" charset="UTF-8">
+</head>
+<body>
+    <form method="post">
+        <p>
+            Geef een zoekwoord op:
+            <input type="text" name="filter"> <input type="submit">
+        </p>
+        <hr>
+            {% for line in data %}
+                {{ line[0] }}
+                <b>
+                    {{ line[1] }}
+                </b>
+                {{ line[2] }} <br>
+
+            {% endfor %}
+        </p>
+
+    </form>
+</body>
+</html>

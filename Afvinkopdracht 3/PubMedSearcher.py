@@ -5,6 +5,7 @@
 from itertools import chain, combinations
 from Bio import Entrez, Medline
 import random
+import pubchempy as pcp
 
 
 def file_reader(filename):
@@ -33,11 +34,30 @@ def make_concepts_list(compounds, genes, molecular_effects):
     return list(chain(compounds, genes, molecular_effects))
 
 
-def get_most_combi(concepts):
+def get_synonyms(compounds):
+    """Deze functie haalt de synoniemen op.
+
+    :param compounds: een lijst van de compounds
+    :return: een dictionary met als key de compound en als value de
+    synoniemen
+    """
+    comp_syn_dict = {}
+    for compound in compounds:
+        try:
+            comp_syn_dict[compound] = pcp.get_synonyms(compound, 'name')[0]\
+                .get('Synonym')
+        except IndexError:
+            comp_syn_dict[compound] = []
+    return comp_syn_dict
+
+
+def get_most_combi(concepts, comp_syn_dict):
     """Deze functie haalt de ids op van de artikelen van de meest
     voorkomende combinaties.
 
     :param concepts: de lijst met begrippen
+    :param comp_syn_dict: een dictionary met als key de compound en als
+    value de synoniemen
     :return value: het aantal artikelen van de meest voorkomende combi's
     :return most_combi: een lijst met de meest voorkomende combi's
     :return ids_list: een lijst van ids van de artikelen van de meest
@@ -46,25 +66,58 @@ def get_most_combi(concepts):
     value = 0
     most_combi = []
     ids_list = []
-    for combi in combinations(concepts, 2):
-        query = str(combi).replace(", ", " AND ").replace("'", "\"") \
-            .replace("\" ", "\" [tiab] ").replace("\")", "\" [tiab])")
+    for concept1, concept2 in combinations(concepts, 2):
+        # Maak de query
+        query = make_query(comp_syn_dict, concept1, concept2)
+        # Haal de artikelen op
         handle = Entrez.esearch(db="pubmed", term=query)
         record = Entrez.read(handle)
         handle.close()
         count = int(record["Count"])
+        # Sla alleen de ID's op als de count hoger of gelijk is
         if count > value:
             value = count
             most_combi.clear()
-            most_combi.append(query)
+            most_combi.append(concept1 + " en " + concept2)
             ids_list.clear()
             ids_list.append(record["IdList"])
         elif count == value:
-            most_combi.append(query)
+            most_combi.append(concept1 + " en " + concept2)
             ids_list.append(record["IdList"])
         else:
             pass
     return value, most_combi, ids_list
+
+
+def make_query(comp_syn_dict, concept1, concept2):
+    """Deze functie maakt de query.
+
+    :param comp_syn_dict: een dictionary met als key de compound en als
+    value de synoniemen
+    :param concept1: het eerste begrip
+    :param concept2: het tweede begrip
+    :return: de gemaakte query
+    """
+    query = ""
+    # Voor het eerste begrip
+    if comp_syn_dict.get(concept1) is not None \
+            and len(comp_syn_dict.get(concept1)) != 0:
+        query += "((" + concept1 + " [tiab] OR " + \
+                 str(comp_syn_dict.get(concept1))\
+                     .replace("', '", " [tiab] OR ")\
+                     .replace("['", "").replace("']", " [tiab]") + ")"
+    else:
+        query += "(" + concept1 + " [tiab]"
+    # Voor het tweede begrip
+    if comp_syn_dict.get(concept2) is not None \
+            and len(comp_syn_dict.get(concept2)) != 0:
+        query += " AND ((" + concept2 + " [tiab] OR " + \
+                 str(comp_syn_dict.get(concept2))\
+                     .replace("', '", " [tiab] OR ")\
+                     .replace("['", "").replace("']", " [tiab]") + "))"
+    else:
+        query += " AND " + concept2 + " [tiab])"
+    return query
 
 
 def choose_random(most_combi, ids_list):
@@ -104,16 +157,17 @@ def main():
     compounds = file_reader(compounds_filename)
     genes = file_reader(genes_filename)
     molecular_effects = file_reader(molecular_effects_filename)
+    # [0:4] zodat de dataset niet te groot is
     concepts = make_concepts_list(compounds[0:4], genes[0:4],
                                   molecular_effects[0:4])
-    # [0:4] zodat de dataset niet te groot is
+    comp_syn_dict = get_synonyms(compounds[0:4])
 
     compounds = None
     molecular_effects = None
     genes = None
 
     Entrez.email = "margoraijmakers@gmail.com"
-    value, most_combi, ids_list = get_most_combi(concepts)
+    value, most_combi, ids_list = get_most_combi(concepts, comp_syn_dict)
     chosen_combi, chosen_ids = choose_random(most_combi, ids_list)
 
     print("Meest voorkomende combinatie:", chosen_combi.replace("\"", "")
